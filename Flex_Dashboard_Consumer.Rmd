@@ -1,0 +1,137 @@
+---
+title: "Consumer Complaints"
+author: "Jack Wild"
+date: "5/06/2022"
+output:
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 4
+    orientation: rows
+    vertical_layout: scroll
+    
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse) #includes ggplot2
+library(janitor) 
+library(scales)
+library(lubridate)
+library(ggthemes)
+library(dplyr)
+library(remotes)
+library(gt)
+
+
+complaints <- read_rds("complaints.rds")
+
+head(complaints)
+
+```
+
+Data 
+=======================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### 
+
+
+```{r}
+
+complaints_sub <- complaints %>% count(sub_product, sort = TRUE)
+
+head(complaints_sub) %>% gt() %>% 
+  tab_header(title = md("Product Sub-Categories with the Most Consumer Complaints"),
+             subtitle = md("Data from March-December 2020")) %>% 
+  cols_label(sub_product = "Sub Product Category", n = "Number of Complaints") %>% 
+  tab_source_note(source_note = md("*Complaints data from Consumer Financial Protection Bureau")) %>% 
+  opt_table_font(font = "Georgia")
+
+```
+
+
+### 
+
+
+```{r}
+
+complaints_responses <- head(complaints %>% filter(timely_response == "No") %>% 
+  count(company, sort = TRUE))
+
+
+head(complaints_responses) %>% gt() %>% 
+  tab_header(title = md("Companies that failed to provide timely responses to complaints"),
+             subtitle = md("Data from March-December 2020")) %>% 
+  cols_label(company = "Company", n = "Number of Late Responese") %>% 
+  tab_source_note(source_note = md("*Complaints data from Consumer Financial Protection Bureau")) %>% 
+  opt_table_font(font = "Georgia")
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### 
+
+```{r}
+
+dates <- complaints %>% count(mm_yy_received)
+
+testing_labels <- c("Mar","Apr","May","June","July","Aug","Sept","Oct","Nov","Dec")
+
+ggplot(data=dates, aes(x=mm_yy_received, y=n, group=1)) +
+  geom_line(color="#9ebcda")+
+  geom_point() +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3), 
+                     name = "Number of Complaints in Thousands") +
+  scale_x_discrete(labels = testing_labels) +
+  labs(title = "Complaints During 2020", x = " ", y = "Number of Complaints by Thousands", caption = "Data: Consumer Financial Protection Bureau") +
+  theme(text=element_text(family="Georgia"))
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### 
+
+```{r}
+
+complaints_states <- head(complaints %>% count(state, sort = TRUE))
+
+states_labels <- c("FL","CA","TX","NY","GA","PA")
+
+
+ggplot(complaints_states, aes(x = reorder(state, -n), y = n, fill = -n,)) + 
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3), 
+                     name = "Number of Complaints by Thousands") +
+  scale_x_discrete(labels = states_labels) +
+  labs(title = "States Ranked by Number of Complaints", x = " ", y = "tryingagain", caption = "Data: Consumer Financial Protection Bureau") +
+  theme(text=element_text(family="Georgia")) + theme(legend.title = element_blank())
+
+
+```
+
+About
+=======================================================================
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+This data from 2020 is gathered from the Consumer Financial Protection Bureau, which is the U.S. federal agency charged with making sure the public is treated fairly by banks, lenders, and other financial institutions. 
+
+The data used in the tables and visualizations is from 2020 and can be used to understand the nature of complaints filed against U.S. financial institutions. This dataset can be broken down to show many different interesting things, including: 
+
+1) Which "products" or services receive the most complaints from consumers (table 1). This table used the sub-categories to show a more detailed picture of the nature of complaints in 2020. As shown by the table, "credit reporting" was the category of service/product that had the greatest number of complaints. 
+
+2) Table 2 shows which companies had the greatest number the "late" or untimely responses to consumers. This is an important issue to examine because as a consumer, you want to know that—at the very least—you can rely on on companies to provide a timely response. As you can see Xerox is the company with the most untimely responses. 
+
+3) The Linebar shows the overall number of complaints that were received each month during 2020. As the graph shows, December is the month with the most overall complaints, which seems to make sense, as it's the end of the year and the time when Americans spend the most money! 
+
+4) The final barchart shows the complaints broken down by states. FL, CA, TX, NY, GA, and PA are the states with the most complaints. I added a gradient to show the breakdown further. The Y axis is in 10 thousand increments. 
